@@ -23,7 +23,7 @@ gcc -std=c99 -shared -fPIC -o libsymbols.so symbols.c
     }
   }
 }
-```bash
+```
 第四步编辑appinfo.json文件，配置版本
 如果你连如何获取版本都不会，那为啥要用这个项目？
 ### 3. 运行服务器
