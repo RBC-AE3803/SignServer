@@ -1,0 +1,1 @@
+void qq_magic_napi_register(void*) { }
