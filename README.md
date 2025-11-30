@@ -10,7 +10,6 @@
 gcc -std=c99 -shared -fPIC -o libsymbols.so symbols.c
 ```
 第三步编辑 `appsettings.json` 文件，配置签名服务参数：
-```json
 {
   "AppSettings": {
     "SignService": {
@@ -23,11 +22,10 @@ gcc -std=c99 -shared -fPIC -o libsymbols.so symbols.c
     }
   }
 }
-```
 第四步编辑appinfo.json文件，配置版本
 如果你连如何获取版本都不会，那为啥要用这个项目？
 ### 3. 运行服务器
-
+本项目使用.NET 10((((
 如果你连如何打包都不会，那为啥要用这个项目？
 如果你连如何调试运行都不会，那为啥要用这个项目？
 
