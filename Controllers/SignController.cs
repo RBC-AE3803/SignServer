@@ -129,4 +129,83 @@ public class SignController : ControllerBase
                 new ErrorResponse { Error = "读取应用信息失败" });
         }
     }
+
+    [HttpGet("appinfo_v2")]
+    public IActionResult GetAppInfoV2()
+    {
+        try
+        {
+            var appInfoPath = "./appinfo.json";
+            if (!System.IO.File.Exists(appInfoPath))
+            {
+                appInfoPath = "./QQApp/appinfo.json";
+                if (!System.IO.File.Exists(appInfoPath))
+                {
+                    return NotFound(new ErrorResponse { Error = "应用信息文件不存在" });
+                }
+            }
+
+            var jsonContent = System.IO.File.ReadAllText(appInfoPath);
+            using var document = JsonDocument.Parse(jsonContent);
+            var root = document.RootElement;
+
+            var sdkInfo = new Dictionary<string, object>
+            {
+                ["SdkBuildTime"] = GetLong(root, "SdkBuildTime"),
+                ["SdkVersion"] = GetString(root, "SdkVersion"),
+                ["MiscBitMap"] = GetInt(root, "MiscBitmap"),
+                ["SubSigMap"] = GetInt(root, "SubSigMap"),
+                ["MainSigMap"] = GetInt(root, "MainSigMap"),
+            };
+
+            var response = new Dictionary<string, object>
+            {
+                ["Os"] = GetString(root, "Os"),
+                ["VendorOs"] = GetString(root, "VendorOs"),
+                ["Kernel"] = GetString(root, "Kernel"),
+                ["Qua"] = GetString(root, "Qua"),
+                ["CurrentVersion"] = GetString(root, "CurrentVersion"),
+                ["PtVersion"] = GetString(root, "PtVersion"),
+                ["SsoVersion"] = GetInt(root, "SsoVersion"),
+                ["PackageName"] = GetString(root, "PackageName"),
+                ["WtLoginSdk"] = GetString(root, "WtLoginSdk"),
+                ["SdkInfo"] = sdkInfo,
+                ["AppId"] = GetLong(root, "AppId"),
+                ["AppIdQrCode"] = GetLong(root, "AppIdQrCode"),
+                ["SubAppId"] = GetLong(root, "SubAppId"),
+                ["AppClientVersion"] = GetInt(root, "AppClientVersion"),
+                ["NTLoginType"] = 1,
+            };
+
+            return Ok(response);
+        }
+        catch (JsonException)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Error = "应用信息文件格式错误" });
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Error = "读取应用信息失败" });
+        }
+    }
+
+    private static string GetString(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out var prop)) return "0";
+        if (prop.ValueKind == JsonValueKind.String)
+        {
+            var v = prop.GetString();
+            return string.IsNullOrEmpty(v) ? "0" : v!;
+        }
+        var s = prop.ToString();
+        return string.IsNullOrEmpty(s) ? "0" : s;
+    }
+    private static int GetInt(JsonElement root, string name)
+    {
+        return root.TryGetProperty(name, out var prop) ? prop.GetInt32() : 0;
+    }
+    private static long GetLong(JsonElement root, string name)
+    {
+        return root.TryGetProperty(name, out var prop) ? prop.GetInt64() : 0L;
+    }
 }

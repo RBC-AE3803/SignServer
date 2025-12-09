@@ -254,39 +254,28 @@ public class SignService : ISignService
     {
         try
         {
-            var mapsPath = "/proc/self/maps";
-            if (!File.Exists(mapsPath))
+            var state = new DlIteratePhdrState(moduleName);
+            var handle = GCHandle.Alloc(state);
+            try
             {
-                _logger.LogWarning("无法访问 /proc/self/maps，使用默认基地址");
-                return 0x10000000;
-            }
-            
-            var mapsContent = File.ReadAllLines(mapsPath);
-            foreach (var line in mapsContent)
-            {
-                if (line.Contains(moduleName))
+                int ret = NativeMethods.dl_iterate_phdr(DlIteratePhdrCallback, GCHandle.ToIntPtr(handle));
+                if (ret != 0 && state.Found && state.BaseAddress != 0)
                 {
-                    var parts = line.Split(' ');
-                    if (parts.Length > 0)
-                    {
-                        var addressRange = parts[0].Split('-');
-                        if (addressRange.Length == 2)
-                        {
-                            var baseAddress = Convert.ToUInt64(addressRange[0], 16);
-                            _logger.LogDebug("找到模块 {ModuleName} 基地址: 0x{BaseAddress:X16}", moduleName, baseAddress);
-                            return baseAddress;
-                        }
-                    }
+                    _logger.LogDebug("找到模块 {ModuleName} 基地址: 0x{BaseAddress:X16}", moduleName, state.BaseAddress);
+                    return state.BaseAddress;
                 }
+                _logger.LogError("未找到模块 {ModuleName} 的基地址", moduleName);
+                return 0;
             }
-            
-            _logger.LogWarning("在 /proc/self/maps 中未找到模块 {ModuleName}，使用默认基地址", moduleName);
-            return 0x10000000;
+            finally
+            {
+                handle.Free();
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "获取模块基地址失败，使用默认基地址");
-            return 0x10000000;
+            _logger.LogError(ex, "使用 dl_iterate_phdr 获取模块基地址失败");
+            return 0;
         }
     }
     
@@ -429,6 +418,39 @@ public class SignService : ISignService
             throw;
         }
     }
+
+    private sealed class DlIteratePhdrState
+    {
+        public string ModuleName { get; }
+        public ulong BaseAddress { get; set; }
+        public bool Found { get; set; }
+        public DlIteratePhdrState(string moduleName)
+        {
+            ModuleName = moduleName;
+            BaseAddress = 0;
+            Found = false;
+        }
+    }
+
+    private static int DlIteratePhdrCallback(ref NativeMethods.DlPhdrInfo info, IntPtr size, IntPtr data)
+    {
+        try
+        {
+            var handle = GCHandle.FromIntPtr(data);
+            var state = (DlIteratePhdrState)handle.Target!;
+            string? name = Marshal.PtrToStringAnsi(info.dlpi_name);
+            if (!string.IsNullOrEmpty(name) && name.Contains(state.ModuleName, StringComparison.Ordinal))
+            {
+                state.BaseAddress = info.dlpi_addr;
+                state.Found = true;
+                return 1;
+            }
+        }
+        catch
+        {
+        }
+        return 0;
+    }
     
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int SignFunctionDelegate(
@@ -473,4 +495,19 @@ internal static class NativeMethods
     
     [DllImport("libdl.so.2")]
     public static extern string dlerror();
+    
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DlPhdrInfo
+    {
+        public ulong dlpi_addr;
+        public IntPtr dlpi_name;
+        public IntPtr dlpi_phdr;
+        public ushort dlpi_phnum;
+    }
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate int DlIteratePhdrCallback(ref DlPhdrInfo info, IntPtr size, IntPtr data);
+    
+    [DllImport("libc.so.6")]
+    public static extern int dl_iterate_phdr(DlIteratePhdrCallback callback, IntPtr data);
 }

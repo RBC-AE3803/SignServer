@@ -18,7 +18,9 @@ builder.Services.AddHostedService<StartupService>();
 
 
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+builder.Logging.ClearProviders();
+builder.Logging.AddProvider(new NTQQ_SignServer.Services.CustomConsoleLoggerProvider());
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
