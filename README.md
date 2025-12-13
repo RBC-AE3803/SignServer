@@ -1,15 +1,6 @@
-# NTQQ Sign Server - ASP.NET Core 签名服务器
+# NTQQ-SignerServer
 
-这是一个基于 ASP.NET Core 10 重写的 NTQQ 签名服务器，解决了原 Python 版本中可能出现的算术溢出问题。
-
-## 功能特性
-
-- ✅ 基于 ASP.NET Core 10 构建，性能优异
-- ✅ 完整的日志记录和错误处理
-- ✅ 防止算术溢出和缓冲区溢出
-- ✅ 支持配置文件和动态配置
-- ✅ 健康检查和状态监控
-- ✅ Swagger API 文档
+这是一个基于 ASP.NET Core 10 重写的 NTQQ 签名服务器
 
 ## 项目结构
 
@@ -36,10 +27,6 @@ NTQQ-SignServer/
 
 确保已安装 .NET 10 SDK：
 
-```bash
-# 检查 .NET 版本
-dotnet --version
-```
 
 ### 2. 配置签名服务
 
@@ -107,6 +94,10 @@ dotnet run
 
 返回从appinfo.json读取的应用配置信息。
 
+**GET** `/api/sign/appinfo_v2`
+
+返回从appinfo.json读取的应用配置信息，并转译为Lagrange v2格式。
+
 ### 健康检查
 
 **GET** `/api/sign/health`
@@ -146,25 +137,6 @@ dotnet run
 }
 ```
 
-## 安全特性
-
-### 防止算术溢出
-
-- 使用安全的类型转换和边界检查
-- 防止指针计算时的溢出
-- 验证输入数据的有效范围
-
-### 防止缓冲区溢出
-
-- 限制输入数据最大长度
-- 验证十六进制字符串格式
-- 使用安全的缓冲区操作
-
-### 错误处理
-
-- 完整的异常捕获和日志记录
-- 详细的错误信息返回
-- 服务状态监控
 
 ## 故障排除
 
@@ -209,14 +181,6 @@ journalctl -u ntqq-signserver
 ### 修改配置
 
 所有配置都在 `appsettings.json` 中管理，支持开发和生产环境的不同配置。
-
-### 测试
-
-使用 Swagger UI 进行 API 测试：
-
-1. 启动服务器
-2. 访问 `http://localhost:8080/swagger`
-3. 在 Swagger UI 中测试各个接口
 
 ## 许可证
 
