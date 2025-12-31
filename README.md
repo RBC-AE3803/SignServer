@@ -26,7 +26,7 @@ NTQQ-SignServer/
 ### 1. 安装依赖
 
 确保已安装 .NET 10 SDK：
-
+cd到QQApp目录，运行gcc -std=c99 -shared -fPIC -o libsymbols.so symbols.c 生成so文件
 
 ### 2. 配置签名服务
 
